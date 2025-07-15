@@ -8,6 +8,13 @@ from pydantic import BaseModel
 from recipe_generator.image_recognition import detect_ingredients
 from recipe_generator.generate_recipe import generate_recipes_from_ingredients
 from recipe_generator.nutrition_generator import get_nutrition_from_ingredients
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+# ✅ Path to React build folder
+FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "../smartchef-ai-frontend/dist")
+
+# ✅ Serve static assets (CSS, JS)
 
 # Initialize FastAPI app
 app = FastAPI(title="SmartChef AI API", description="AI-powered recipe generator 🍳")
@@ -96,3 +103,16 @@ async def detect(file: UploadFile = File(...)):
 
     except Exception as e:
         return {"error": f"Failed to process image: {str(e)}"}
+
+
+
+app.mount("/static", StaticFiles(directory=os.path.join(FRONTEND_DIR, "assets")), name="static")
+
+
+# ✅ Catch-all route for React SPA
+@app.get("/{full_path:path}")
+async def serve_frontend(full_path: str):
+    index_path = os.path.join(FRONTEND_DIR, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    return {"error": "index.html not found"}
